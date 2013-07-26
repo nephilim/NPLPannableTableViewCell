@@ -1,6 +1,19 @@
 # Xcode
+# general ignores
+.*
+!.gitignore
+*~
+*.bak
+*.class
+*.swp
+*.log
+*.tmp
+
+# TextMate noise
+*.tm_build_errors
+# Xcode noise, after https://github.com/github/gitignore/blob/master/Objective-C.gitignore
 .DS_Store
-build/
+build/*
 *.pbxuser
 !default.pbxuser
 *.mode1v3
@@ -9,10 +22,13 @@ build/
 !default.mode2v3
 *.perspectivev3
 !default.perspectivev3
-*.xcworkspace
-!default.xcworkspace
 xcuserdata
 profile
 *.moved-aside
+*~.nib
+
+# used to add version strings to *-Info.plist
+*/*-Info-plist.h
+
 DerivedData
 .idea/
