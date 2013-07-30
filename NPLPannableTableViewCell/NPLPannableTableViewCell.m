@@ -74,6 +74,15 @@ static NSMutableDictionary* panningCells = nil;         // register panning cell
                                                                                                                        action:@selector(handleCellPanning:)];
         [panGestureRecognizer setDelegate:cell];
         [cell setGestureRecognizers:[NSArray arrayWithObjects:panGestureRecognizer, nil]];
+        cell.groupId = (groupId == AUTOGENERATE_GROUP_ID)?[NPLPannableTableViewCell
+                generateTableViewIdentifierFromTableView:tableView]:groupId;
+
+        if (tableView.allowsSelection) {
+            tableView.allowsSelection = NO;
+            NSLog(@"Warning: TableView using pannable TableViewCell should not allow selection.");
+            NSLog(@"Automatically changed the TableView not to allow selection.");
+        }
+
     }
     return cell;
 }
