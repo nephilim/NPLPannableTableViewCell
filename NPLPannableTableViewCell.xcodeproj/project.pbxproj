@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		46A0530819E609FFF2571AE1 /* CellLocation.m in Sources */ = {isa = PBXBuildFile; fileRef = 46A05509A6D6E970DA5CB075 /* CellLocation.m */; };
 		C6586202179EE35400C04AD5 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C6586201179EE35400C04AD5 /* CoreGraphics.framework */; };
 		C6F49FA3179EDEC2001859D9 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C6F49FA2179EDEC2001859D9 /* Foundation.framework */; };
 		C6F49FB4179EDF1D001859D9 /* NPLCancellablePanGestureRecognizer.m in Sources */ = {isa = PBXBuildFile; fileRef = C6F49FB1179EDF1D001859D9 /* NPLCancellablePanGestureRecognizer.m */; };
@@ -28,6 +29,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		46A052E452C535708EBE5483 /* CellLocation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CellLocation.h; sourceTree = "<group>"; };
+		46A05509A6D6E970DA5CB075 /* CellLocation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CellLocation.m; sourceTree = "<group>"; };
 		C6586201179EE35400C04AD5 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		C6F49F9F179EDEC2001859D9 /* libNPLPannableTableViewCell.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libNPLPannableTableViewCell.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6F49FA2179EDEC2001859D9 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -88,6 +91,8 @@
 			children = (
 				C6F49FB0179EDF1D001859D9 /* NPLCancellablePanGestureRecognizer.h */,
 				C6F49FB1179EDF1D001859D9 /* NPLCancellablePanGestureRecognizer.m */,
+				46A05509A6D6E970DA5CB075 /* CellLocation.m */,
+				46A052E452C535708EBE5483 /* CellLocation.h */,
 				C6F49FB2179EDF1D001859D9 /* NPLPannableTableViewCell.h */,
 				C6F49FB3179EDF1D001859D9 /* NPLPannableTableViewCell.m */,
 				C6F49FA5179EDEC2001859D9 /* Supporting Files */,
@@ -156,6 +161,7 @@
 			files = (
 				C6F49FB4179EDF1D001859D9 /* NPLCancellablePanGestureRecognizer.m in Sources */,
 				C6F49FB5179EDF1D001859D9 /* NPLPannableTableViewCell.m in Sources */,
+				46A0530819E609FFF2571AE1 /* CellLocation.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

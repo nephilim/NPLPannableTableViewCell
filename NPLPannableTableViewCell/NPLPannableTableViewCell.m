@@ -25,7 +25,7 @@
 - (void) removeShadow;
 
 // tap(zoom)
-- (void) closeExpandedCell; //TODO: clearPreviosExpandedCell option
+// - (void) closeExpandedCell; //TODO: clearPreviosExpandedCell option
 
 @end
 
@@ -33,15 +33,13 @@
 
 static CGFloat distanceThreshold;                       // panning distance
 
-static NSMutableDictionary* prevPannedCells = nil;      // register panned cell when it's opened,
-                                                        // panned cell exist only on for each tableViewId set by users
-static NSMutableDictionary* panningCells = nil;         // register panning cell when user started to pan
-                                                        // panning cell exist only on for each tableViewId set by users
-
+static NSMutableDictionary*prevPannedCellLocations = nil;      // register panned cell when it's opened,
+static NSMutableDictionary*panningCellLocations = nil;         // register panning cell when user started to pan
+                                                        // panning cell exist only on for each tableView set by users
 @synthesize panningForegroundView, panningBackgroundView;
 @synthesize openToPosX, closeToPosX;
 @synthesize performBeforeOpening, performAfterClosing;
-@synthesize tableViewId;
+@synthesize tableView, groupId;
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated
 {
@@ -51,29 +49,25 @@ static NSMutableDictionary* panningCells = nil;         // register panning cell
 }
 
 // designated initialzer
-- (id)initWithReuseIdentifier:(NSString*)reuseIdentifier
-                   foreground:(UIView*)foreground
-                   background:(UIView*)background
+- (id)initWithReuseIdentifier:(NSString *)reuseIdentifier
+                   foreground:(UIView *)foreground
+                   background:(UIView *)background
                    openToPosX:(CGFloat)openToX
                   closeToPosX:(CGFloat)closeToX
-          tableViewIdentifier:(NSString*)tableViewIdentifier;
-{
+                    tableView:(UITableView *)tableView
+                      groupId:(NSString *)groupId {
     
     NPLPannableTableViewCell* cell = [[NPLPannableTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
                                                                      reuseIdentifier:reuseIdentifier];
     if (cell) {
-        [cell.contentView addSubview:background];
-        [cell.contentView addSubview:foreground];
         cell.panningForegroundView = foreground;
         cell.panningBackgroundView = background;
+        [cell.contentView addSubview:background];
+        [cell.contentView addSubview:foreground];
+
         cell.openToPosX = openToX;
         cell.closeToPosX = closeToX;
-        cell.tableViewId = tableViewIdentifier;
-        
-        NPLCancellablePanGestureRecognizer* panGestureRecognizer = [[NPLCancellablePanGestureRecognizer alloc] initWithTarget:cell
-                                                                                                                       action:@selector(handleCellPanning:)];
-        [panGestureRecognizer setDelegate:cell];
-        [cell setGestureRecognizers:[NSArray arrayWithObjects:panGestureRecognizer, nil]];
+        cell.tableView = tableView;
         cell.groupId = (groupId == AUTOGENERATE_GROUP_ID)?[NPLPannableTableViewCell
                 generateTableViewIdentifierFromTableView:tableView]:groupId;
 
@@ -83,6 +77,11 @@ static NSMutableDictionary* panningCells = nil;         // register panning cell
             NSLog(@"Automatically changed the TableView not to allow selection.");
         }
 
+        NPLCancellablePanGestureRecognizer *gestureRecognizer = [[NPLCancellablePanGestureRecognizer alloc]
+                initWithTarget:cell
+                        action:@selector(handleCellPanning:)];
+        [gestureRecognizer setDelegate:cell];
+        [cell setGestureRecognizers:[NSArray arrayWithObjects:gestureRecognizer, nil]];
     }
     return cell;
 }
@@ -90,26 +89,31 @@ static NSMutableDictionary* panningCells = nil;         // register panning cell
 + (NSString*)generateTableViewIdentifierFromTableView:(UITableView*)tableView
 {
     NSValue* pointer= [NSValue valueWithPointer:(__bridge void *)tableView];
-    return [NSString stringWithFormat:@"%@", pointer];
+    return [NSString stringWithFormat:@"tbp-%@", pointer];
 }
 
-- (void)setAsPrevPannedCell
+//- (NSIndexPath *)prevPannedIndexPath {
+//    return [NPLPannableTableViewCell prevPannedIndexPathForTableView:self.tableView];
+//}
+
+- (void)setAsPrevPannedIndexPath
 {
-    [NPLPannableTableViewCell setPrevPannedCell:self tableViewIdentifier:self.tableViewId];
+    NSIndexPath* indexPath = [tableView indexPathForCell:self];
+    [NPLPannableTableViewCell setPrevPannedIndexPath:indexPath tableView:self.tableView forGroupId:self.groupId];
 }
 
 - (void)setAsPanningCell
 {
-    [NPLPannableTableViewCell setPanningCell:self tableViewIdentifier:self.tableViewId];
+    NSIndexPath* indexPath = [tableView indexPathForCell:self];
+    [NPLPannableTableViewCell setPanningCellIndexPath:indexPath tableView:self.tableView forGroupId:self.groupId];
 }
-
 
 #pragma mark - Panning Gesture Recognizer start condition
 
 - (BOOL) gestureRecognizerShouldBegin:(UIGestureRecognizer*)gestureRecognizer {
-    @synchronized(self.tableViewId){
+    @synchronized(self.tableView){
         BOOL shouldStart = NO;
-        NPLPannableTableViewCell* panningCell = [NPLPannableTableViewCell panningCellForTableViewIdentifier:self.tableViewId];
+        NPLPannableTableViewCell* panningCell = [NPLPannableTableViewCell panningCellForGroupId:self.groupId];
         if (panningCell == nil && [gestureRecognizer isKindOfClass:[NPLCancellablePanGestureRecognizer class]]) {
             
             NPLCancellablePanGestureRecognizer* panGestureRecognizer = (NPLCancellablePanGestureRecognizer*)gestureRecognizer;
@@ -124,19 +128,16 @@ static NSMutableDictionary* panningCells = nil;         // register panning cell
     }
 }
 
-- (NPLPannableTableViewCell*)prevPannedCell {
-    return [NPLPannableTableViewCell prevPannedCellForTableViewIdentifier:self.tableViewId];
-}
-
 - (IBAction) handleCellPanning:(NPLCancellablePanGestureRecognizer*)gestureRecognizer {
     
     // TODO: declare static vars per table
     static CGPoint panningStartPos;
     
-    NPLPannableTableViewCell* panningCell = [NPLPannableTableViewCell panningCellForTableViewIdentifier:self.tableViewId];
+    NPLPannableTableViewCell* panningCell = [self panningCellInGroup];
+
     if (panningCell != nil && self != panningCell){
+        // prevent simultaneous panning gesture
         [gestureRecognizer cancel];
-        //NSLog(@"%d - cancelled", [self hash]);
         return;
     }
     
@@ -144,12 +145,10 @@ static NSMutableDictionary* panningCells = nil;         // register panning cell
     CGFloat panToX = 0.0;
     CGPoint velocity;
     
-    NPLPannableTableViewCell* prevPannedCell = [NPLPannableTableViewCell prevPannedCellForTableViewIdentifier:self.tableViewId];
+    NPLPannableTableViewCell* prevPannedCell = [self prevPannedCellInGroup];
     
     switch ([gestureRecognizer state]) {
         case UIGestureRecognizerStateBegan:
-            //NSLog(@"%d - pan began:", [self hash]);
-
             [self setAsPanningCell];
             
             // close previosly opened cell
@@ -181,7 +180,7 @@ static NSMutableDictionary* panningCells = nil;         // register panning cell
                 // user tries to open not-opened-yet cell
                 if( [self isPanningOpenThresholdWithCurrentPos:location
                                                       startPos:panningStartPos] ) {
-                    [self setAsPrevPannedCell]; // open
+                    [self setAsPrevPannedIndexPath]; // open
                     [self panOpen];
                 } else {
                     [self panClose:NO];         // fail to open
@@ -193,8 +192,8 @@ static NSMutableDictionary* panningCells = nil;         // register panning cell
             
             panningStartPos.x = 0;
             panningStartPos.y = 0;
-            
-            [panningCells removeObjectForKey:self.tableViewId]; 
+
+            [panningCellLocations removeObjectForKey:self.groupId];
             break;
             
         case UIGestureRecognizerStateChanged:
@@ -270,35 +269,58 @@ static NSMutableDictionary* panningCells = nil;         // register panning cell
 #pragma mark - Panning Gesture: pan the designated UIView of a tableViewCell (foreground view)
 
 // previously panned cell
-+(NPLPannableTableViewCell*) prevPannedCellForTableViewIdentifier:(NSString*)tableViewId {
-    if (!tableViewId) return nil;
-    
-    return (NPLPannableTableViewCell*)[prevPannedCells objectForKey:tableViewId];
+
+- (NPLPannableTableViewCell *)prevPannedCellInGroup {
+    return [NPLPannableTableViewCell prevPannedCellForGroupId:self.groupId];
 }
 
-+(void) setPrevPannedCell:(NPLPannableTableViewCell*)tableViewCell tableViewIdentifier:(NSString*)tableViewId {
-    if(prevPannedCells) {
-        [prevPannedCells setObject:tableViewCell forKey:tableViewId];
++ (NPLPannableTableViewCell *)prevPannedCellForGroupId:(NSString *)groupId {
+    CellLocation* cellLocation = [NPLPannableTableViewCell prevPannedCellLocationForGroupId:groupId];
+
+    return (NPLPannableTableViewCell*)[cellLocation.tableView cellForRowAtIndexPath:cellLocation.indexPath];
+
+}
+
++ (CellLocation *)prevPannedCellLocationForGroupId:(NSString *)groupId {
+    if (!groupId) return nil;
+    return (CellLocation*)[prevPannedCellLocations objectForKey:groupId];
+}
+
++ (void)setPrevPannedIndexPath:(NSIndexPath *)indexPath
+                     tableView:(UITableView *)tableView
+                    forGroupId:(NSString *)groupId {
+    CellLocation *cellLocation = [[CellLocation alloc] initWithNSIndexPath:indexPath tableView:tableView];
+    if(prevPannedCellLocations) {
+        [prevPannedCellLocations setObject:cellLocation forKey:groupId];
     } else {
         // create NSMutableDictionary for previously panned cell for tableview id
-        prevPannedCells = [NSMutableDictionary dictionaryWithObject:tableViewCell forKey:tableViewId];
+        prevPannedCellLocations = [NSMutableDictionary dictionaryWithObject:cellLocation forKey:groupId];
     }
 }
 
-// panning cell
+// currently panning cell
 
-+(NPLPannableTableViewCell*) panningCellForTableViewIdentifier:(NSString*)tableViewId {
-    if (!tableViewId) return nil;
-    
-    return (NPLPannableTableViewCell*)[panningCells objectForKey:tableViewId];
+- (NPLPannableTableViewCell *)panningCellInGroup {
+    return [NPLPannableTableViewCell panningCellForGroupId:self.groupId];
 }
 
-+(void) setPanningCell:(NPLPannableTableViewCell*)tableViewCell tableViewIdentifier:(NSString*)tableViewId {
-    if(panningCells) {
-        [panningCells setObject:tableViewCell forKey:tableViewId];
++(NPLPannableTableViewCell *)panningCellForGroupId:(NSString *)groupId {
+    if (!groupId) return nil;
+
+    CellLocation* cellLocation = [panningCellLocations objectForKey:groupId];
+    return (NPLPannableTableViewCell*)[cellLocation.tableView cellForRowAtIndexPath:cellLocation.indexPath];
+}
+
++ (void)setPanningCellIndexPath:(NSIndexPath *)indexPath
+                      tableView:(UITableView *)tableView
+                     forGroupId:(NSString *)groupId {
+    CellLocation *cellLocation = [[CellLocation alloc] initWithNSIndexPath:indexPath
+                                                                 tableView:tableView];
+    if(panningCellLocations) {
+        [panningCellLocations setObject:cellLocation forKey:groupId];
     } else {
         // create NSMutableDictionary for panning cell for tableview id
-        panningCells = [NSMutableDictionary dictionaryWithObject:tableViewCell forKey:tableViewId];
+        panningCellLocations = [NSMutableDictionary dictionaryWithObject:cellLocation forKey:groupId];
     }
 }
 
@@ -337,7 +359,7 @@ static NSMutableDictionary* panningCells = nil;         // register panning cell
 
 -(void)panCloseWithShadow:(BOOL)shadow removePrevPannedCell:(BOOL)removePrevPannedCell; {
     if(removePrevPannedCell) {
-        [prevPannedCells removeObjectForKey:self.tableViewId];
+        [prevPannedCellLocations removeObjectForKey:self.groupId];
     }
     
     if(shadow) {
@@ -361,6 +383,35 @@ static NSMutableDictionary* panningCells = nil;         // register panning cell
                      animations:^{
                          [view setTransform:CGAffineTransformMakeTranslation(x, 0)];}
                      completion:completionBlock];
+}
+
+- (void)resetToInitPositionAt:(NSIndexPath *)indexPath {
+    CellLocation *prevPannedCellLocation = [NPLPannableTableViewCell prevPannedCellLocationForGroupId:self.groupId];
+    if ([self isCellLocationEqualTo:prevPannedCellLocation indexPath:indexPath ]) {
+        [self resetFrameOf:self.panningForegroundView
+                       toX:(self.openToPosX - self.bounds.size.width)
+                       toY:self.panningForegroundView.frame.origin.y];
+    } else {
+        [self resetFrameOf:self.panningForegroundView
+                       toX:self.closeToPosX
+                       toY:self.panningForegroundView.frame.origin.y];
+    }
+}
+
+- (void)resetFrameOf:(UIView *)view toX:(CGFloat)x toY:(CGFloat)y {
+    CGRect originalFrame = view.frame;
+    if(!CGPointEqualToPoint(originalFrame.origin, CGPointMake(x,y))) {
+        view.frame = CGRectMake(x, y, originalFrame.size.width, originalFrame.size.height);
+    }
+}
+
+- (BOOL)isCellLocationEqualTo:(CellLocation *)location indexPath:(NSIndexPath *)indexPath {
+    BOOL result = NO;
+    if (self.tableView == location.tableView &&
+        [indexPath isEqual:location.indexPath]) {
+        result = YES;
+    }
+    return result;
 }
 
 @end

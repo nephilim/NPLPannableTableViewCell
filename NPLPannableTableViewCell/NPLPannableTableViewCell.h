@@ -9,56 +9,72 @@
 #import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>
 
+#import "CellLocation.h"
 #import "NPLCancellablePanGestureRecognizer.h"
 
-@interface NPLPannableTableViewCell : UITableViewCell<UIGestureRecognizerDelegate> {
-    UIView* shadowView;
+#define AUTOGENERATE_GROUP_ID nil
+
+@interface NPLPannableTableViewCell : UITableViewCell <UIGestureRecognizerDelegate> {
+    UIView *shadowView;
 }
 
-typedef void (^BlockWithPannableCell)(NPLPannableTableViewCell*);
+typedef void (^BlockWithPannableCell)(NPLPannableTableViewCell *);
 
-@property (nonatomic, readwrite) UIView* panningForegroundView;
-@property (nonatomic, readwrite) UIView* panningBackgroundView;
-@property (copy, readwrite) BlockWithPannableCell performBeforeOpening;
-@property (copy, readwrite) BlockWithPannableCell performAfterClosing;
+@property(nonatomic, readwrite) UIView *panningForegroundView;
+@property(nonatomic, readwrite) UIView *panningBackgroundView;
+@property(copy, readwrite) BlockWithPannableCell performBeforeOpening;
+@property(copy, readwrite) BlockWithPannableCell performAfterClosing;
 
 @property CGFloat openToPosX;
 @property CGFloat closeToPosX;
 
-@property NSString* tableViewId;
+@property UITableView *tableView;
+@property NSString *groupId;
 
-+(NPLPannableTableViewCell*)prevPannedCellForTableViewIdentifier:(NSString*)tableViewId;
-+(void)setPrevPannedCell:(NPLPannableTableViewCell*)tableViewCell
-     tableViewIdentifier:(NSString*)tableViewId;
++ (NPLPannableTableViewCell *)prevPannedCellForGroupId:(NSString *)groupId;
 
-+(NPLPannableTableViewCell*)panningCellForTableViewIdentifier:(NSString*)tableViewId;
-+(void)setPanningCell:(NPLPannableTableViewCell*)tableViewCell
-  tableViewIdentifier:(NSString*)tableViewId;
++ (CellLocation *)prevPannedCellLocationForGroupId:(NSString *)groupId;
 
-+(NSString*)generateTableViewIdentifierFromTableView:(UITableView*)tableView;
++ (void)setPrevPannedIndexPath:(NSIndexPath *)indexPath
+                     tableView:(UITableView *)tableView
+                    forGroupId:(NSString *)groupId;
 
--(NPLPannableTableViewCell*)prevPannedCell;
--(void)setAsPrevPannedCell;
--(void)setAsPanningCell;
--(CGFloat)panningDistanceThreshold;
++ (NPLPannableTableViewCell *)panningCellForGroupId:(NSString *)groupId;
 
--(void)panOpen;
--(void)panClose:(BOOL)removePrevPannedCell;
--(void)panView:(UIView *)view
-           toX:(float)x
-      duration:(float)sec
-    completion:(void (^)(BOOL finished)) completionBlock;
++ (void)setPanningCellIndexPath:(NSIndexPath *)indexPath
+                      tableView:(UITableView *)tableView
+                     forGroupId:(NSString *)groupId;
 
--(BOOL)isPanningOpenThresholdWithCurrentPos:(CGPoint)currentPos startPos:(CGPoint)startPos;
--(BOOL)isPanningCloseThresholdWithCurrentPos:(CGPoint)currentPos startPos:(CGPoint)startPos;
++ (NSString *)generateTableViewIdentifierFromTableView:(UITableView *)tableView;
 
--(id)initWithReuseIdentifier:(NSString*)reuseIdentifier         // reuse identifier
-                  foreground:(UIView*)foreground                // foreground view of the cell
-                  background:(UIView*)background                // background view revealed when the cell is opened
-                  openToPosX:(CGFloat)openToX                   // x position of the right end in cell when it opened
-                 closeToPosX:(CGFloat)closeToX                  // x position of the left end in cell when it closed
-         tableViewIdentifier:(NSString*)tableViewId;            // table view id string for check previously panned cell
+- (void)setAsPrevPannedIndexPath;
 
--(BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer;
+- (void)setAsPanningCell;
 
+- (CGFloat)panningDistanceThreshold;
+
+- (void)panOpen;
+
+- (void)panClose:(BOOL)removePrevPannedCell;
+
+- (void)panView:(UIView *)view
+            toX:(float)x
+       duration:(float)sec
+     completion:(void (^)(BOOL finished))completionBlock;
+
+- (BOOL)isPanningOpenThresholdWithCurrentPos:(CGPoint)currentPos startPos:(CGPoint)startPos;
+
+- (BOOL)isPanningCloseThresholdWithCurrentPos:(CGPoint)currentPos startPos:(CGPoint)startPos;
+
+- (id)initWithReuseIdentifier:(NSString *)reuseIdentifier
+                   foreground:(UIView *)foreground
+                   background:(UIView *)background
+                   openToPosX:(CGFloat)openToX
+                  closeToPosX:(CGFloat)closeToX
+                    tableView:(UITableView *)tableViewId
+                      groupId:(NSString *)groupId;            // table view id string for check previously panned cell
+
+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer;
+
+- (void)resetToInitPositionAt:(NSIndexPath *)indexPath;
 @end
