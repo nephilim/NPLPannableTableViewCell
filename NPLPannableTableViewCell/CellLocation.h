@@ -16,4 +16,7 @@
 
 - (id)initWithNSIndexPath:(NSIndexPath *)indexPath
                 tableView:(UITableView *)tableView;
+
+- (BOOL)isEqualWithTableView:(UITableView *)tableView
+                   indexPath:(NSIndexPath *)indexPath;
 @end

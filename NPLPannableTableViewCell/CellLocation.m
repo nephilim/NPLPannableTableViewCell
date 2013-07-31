@@ -30,4 +30,13 @@
     return description;
 }
 
+- (BOOL)isEqualWithTableView:(UITableView *)tableView
+                   indexPath:(NSIndexPath *)indexPath {
+    BOOL result = NO;
+    if (self.tableView == tableView &&
+        [self.indexPath isEqual:indexPath]) {
+        result = YES;
+    }
+    return result;
+}
 @end
