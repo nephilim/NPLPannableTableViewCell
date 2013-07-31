@@ -31,8 +31,6 @@ typedef void (^BlockWithPannableCell)(NPLPannableTableViewCell *);
 @property UITableView *tableView;
 @property NSString *groupId;
 
-+ (NPLPannableTableViewCell *)prevPannedCellForGroupId:(NSString *)groupId;
-
 + (CellLocation *)prevPannedCellLocationForGroupId:(NSString *)groupId;
 
 + (void)setPrevPannedIndexPath:(NSIndexPath *)indexPath

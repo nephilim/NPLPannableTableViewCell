@@ -144,17 +144,31 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
     CGPoint location = [gestureRecognizer locationInView:self];
     CGFloat panToX = 0.0;
     CGPoint velocity;
-    
-    NPLPannableTableViewCell* prevPannedCell = [self prevPannedCellInGroup];
-    
+
+    CellLocation *prevPannedCellLocation = [self prevPannedCellLocationInGroup];
+    NSIndexPath *indexPath = [tableView indexPathForCell:self];
+
     switch ([gestureRecognizer state]) {
         case UIGestureRecognizerStateBegan:
             [self setAsPanningCell];
             
-            // close previosly opened cell
-            if(prevPannedCell != nil &&
-               self != prevPannedCell) {
-                [prevPannedCell panCloseWithShadow:NO removePrevPannedCell:YES];
+            // close previously opened cell
+
+            if( (prevPannedCellLocation != nil) &&
+                (![prevPannedCellLocation isEqualWithTableView:tableView indexPath:indexPath])) {
+                NPLPannableTableViewCell *prevPannedCell = (NPLPannableTableViewCell*)
+                        [tableView cellForRowAtIndexPath:prevPannedCellLocation.indexPath];
+                NSLog(@"prev panned cell %d (%@), is about to close", prevPannedCellLocation.indexPath.row
+                        , prevPannedCell);
+
+                if(prevPannedCell) {
+                    [prevPannedCell panCloseWithShadow:NO removePrevPannedCell:YES];
+                } else {
+                    // tableviewcell cannot be seen while it's above/below screen area
+                    NSLog(@"prev panned cell is out of sight.");
+                    [self forgetPrevPannedCellLoationInGroup];
+
+                }
             }
             
             // set panning start position
@@ -167,8 +181,7 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
             break;
             
         case UIGestureRecognizerStateEnded:
-            if(self == prevPannedCell) {
-                
+            if([prevPannedCellLocation isEqualWithTableView:tableView indexPath:indexPath]) {
                 // user tries to close cell?
                 if( [self isPanningCloseThresholdWithCurrentPos:location
                                                        startPos:panningStartPos] ) {
@@ -193,7 +206,8 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
             panningStartPos.x = 0;
             panningStartPos.y = 0;
 
-            [panningCellLocations removeObjectForKey:self.groupId];
+            [self forgetPanningCellLocationInGroup];
+
             break;
             
         case UIGestureRecognizerStateChanged:
@@ -210,7 +224,7 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
             //get delta and move only when delta is enough.
             panToX = location.x - panningStartPos.x;
             
-            if(self == prevPannedCell) {
+            //if(self == prevPannedCell) {
                 // user tries to close
                 /*
                  // skip not to blink
@@ -219,7 +233,9 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
                  duration:PANNING_DURATION_NORMAL
                  completion:NULL];
                  */
-            } else if( self !=  prevPannedCell) {
+            //} else
+
+            if( ![prevPannedCellLocation isEqualWithTableView:tableView indexPath:indexPath]) {
                 // user is trying to open
                 [self panView:self.panningForegroundView
                           toX:panToX
@@ -270,15 +286,13 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
 
 // previously panned cell
 
-- (NPLPannableTableViewCell *)prevPannedCellInGroup {
-    return [NPLPannableTableViewCell prevPannedCellForGroupId:self.groupId];
+- (CellLocation *)prevPannedCellLocationInGroup {
+    return [NPLPannableTableViewCell prevPannedCellLocationForGroupId:self.groupId];
 }
 
-+ (NPLPannableTableViewCell *)prevPannedCellForGroupId:(NSString *)groupId {
-    CellLocation* cellLocation = [NPLPannableTableViewCell prevPannedCellLocationForGroupId:groupId];
-
-    return (NPLPannableTableViewCell*)[cellLocation.tableView cellForRowAtIndexPath:cellLocation.indexPath];
-
+- (void)forgetPrevPannedCellLoationInGroup {
+    NSLog(@"prevPannedCell(%d) removed", [self prevPannedCellLocationInGroup].indexPath.row);
+    [prevPannedCellLocations removeObjectForKey:self.groupId];
 }
 
 + (CellLocation *)prevPannedCellLocationForGroupId:(NSString *)groupId {
@@ -304,7 +318,11 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
     return [NPLPannableTableViewCell panningCellForGroupId:self.groupId];
 }
 
-+(NPLPannableTableViewCell *)panningCellForGroupId:(NSString *)groupId {
+- (void)forgetPanningCellLocationInGroup {
+    [panningCellLocations removeObjectForKey:self.groupId];
+}
+
++ (NPLPannableTableViewCell *)panningCellForGroupId:(NSString *)groupId {
     if (!groupId) return nil;
 
     CellLocation* cellLocation = [panningCellLocations objectForKey:groupId];
@@ -387,7 +405,9 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
 
 - (void)resetToInitPositionAt:(NSIndexPath *)indexPath {
     CellLocation *prevPannedCellLocation = [NPLPannableTableViewCell prevPannedCellLocationForGroupId:self.groupId];
-    if ([self isCellLocationEqualTo:prevPannedCellLocation indexPath:indexPath ]) {
+    if ([prevPannedCellLocation isEqualWithTableView:self.tableView
+                                           indexPath:indexPath]) {
+        NSLog(@"prev panned cell at %d, %f", indexPath.row, (self.openToPosX - self.bounds.size.width));
         [self resetFrameOf:self.panningForegroundView
                        toX:(self.openToPosX - self.bounds.size.width)
                        toY:self.panningForegroundView.frame.origin.y];
@@ -403,15 +423,6 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
     if(!CGPointEqualToPoint(originalFrame.origin, CGPointMake(x,y))) {
         view.frame = CGRectMake(x, y, originalFrame.size.width, originalFrame.size.height);
     }
-}
-
-- (BOOL)isCellLocationEqualTo:(CellLocation *)location indexPath:(NSIndexPath *)indexPath {
-    BOOL result = NO;
-    if (self.tableView == location.tableView &&
-        [indexPath isEqual:location.indexPath]) {
-        result = YES;
-    }
-    return result;
 }
 
 @end
