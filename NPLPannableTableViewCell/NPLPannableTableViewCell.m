@@ -158,16 +158,12 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
                 (![prevPannedCellLocation isEqualWithTableView:tableView indexPath:indexPath])) {
                 NPLPannableTableViewCell *prevPannedCell = (NPLPannableTableViewCell*)
                         [tableView cellForRowAtIndexPath:prevPannedCellLocation.indexPath];
-                NSLog(@"prev panned cell %d (%@), is about to close", prevPannedCellLocation.indexPath.row
-                        , prevPannedCell);
-
+                
                 if(prevPannedCell) {
                     [prevPannedCell panCloseWithShadow:NO removePrevPannedCell:YES];
                 } else {
                     // tableviewcell cannot be seen while it's above/below screen area
-                    NSLog(@"prev panned cell is out of sight.");
                     [self forgetPrevPannedCellLoationInGroup];
-
                 }
             }
             
@@ -291,7 +287,6 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
 }
 
 - (void)forgetPrevPannedCellLoationInGroup {
-    NSLog(@"prevPannedCell(%d) removed", [self prevPannedCellLocationInGroup].indexPath.row);
     [prevPannedCellLocations removeObjectForKey:self.groupId];
 }
 
@@ -407,22 +402,17 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
     CellLocation *prevPannedCellLocation = [NPLPannableTableViewCell prevPannedCellLocationForGroupId:self.groupId];
     if ([prevPannedCellLocation isEqualWithTableView:self.tableView
                                            indexPath:indexPath]) {
-        NSLog(@"prev panned cell at %d, %f", indexPath.row, (self.openToPosX - self.bounds.size.width));
-        [self resetFrameOf:self.panningForegroundView
-                       toX:(self.openToPosX - self.bounds.size.width)
-                       toY:self.panningForegroundView.frame.origin.y];
+        [self panView:self.panningForegroundView
+                  toX:(self.openToPosX - self.bounds.size.width)
+             duration:0
+           completion:nil];
     } else {
-        [self resetFrameOf:self.panningForegroundView
-                       toX:self.closeToPosX
-                       toY:self.panningForegroundView.frame.origin.y];
+        [self panView:self.panningForegroundView
+                  toX:self.closeToPosX
+             duration:0
+           completion:nil];
     }
 }
 
-- (void)resetFrameOf:(UIView *)view toX:(CGFloat)x toY:(CGFloat)y {
-    CGRect originalFrame = view.frame;
-    if(!CGPointEqualToPoint(originalFrame.origin, CGPointMake(x,y))) {
-        view.frame = CGRectMake(x, y, originalFrame.size.width, originalFrame.size.height);
-    }
-}
 
 @end
