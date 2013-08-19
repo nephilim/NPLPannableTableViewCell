@@ -49,6 +49,7 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
 }
 
 // designated initialzer
+// if groupId is set AUTOGENERATE_GROUP_ID, the group id is allocated on each table separately
 - (id)initWithReuseIdentifier:(NSString *)reuseIdentifier
                    foreground:(UIView *)foreground
                    background:(UIView *)background
@@ -157,7 +158,7 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
             if( (prevPannedCellLocation != nil) &&
                 (![prevPannedCellLocation isEqualWithTableView:tableView indexPath:indexPath])) {
                 NPLPannableTableViewCell *prevPannedCell = (NPLPannableTableViewCell*)
-                        [tableView cellForRowAtIndexPath:prevPannedCellLocation.indexPath];
+                        [prevPannedCellLocation.tableView cellForRowAtIndexPath:prevPannedCellLocation.indexPath];
                 
                 if(prevPannedCell) {
                     [prevPannedCell panCloseWithShadow:NO removePrevPannedCell:YES];
