@@ -7,10 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		46A0530819E609FFF2571AE1 /* CellLocation.m in Sources */ = {isa = PBXBuildFile; fileRef = 46A05509A6D6E970DA5CB075 /* CellLocation.m */; };
+		46A05596C9E1EBB6ADBFFA6C /* NPLCancellablePanGestureRecognizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 46A051FECD55AD5D285E1C9F /* NPLCancellablePanGestureRecognizer.m */; };
+		46A05AEC69D7E851A7F28F68 /* CellLocation.m in Sources */ = {isa = PBXBuildFile; fileRef = 46A056D25BD136B3573115E4 /* CellLocation.m */; };
 		C6586202179EE35400C04AD5 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C6586201179EE35400C04AD5 /* CoreGraphics.framework */; };
 		C6F49FA3179EDEC2001859D9 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C6F49FA2179EDEC2001859D9 /* Foundation.framework */; };
-		C6F49FB4179EDF1D001859D9 /* NPLCancellablePanGestureRecognizer.m in Sources */ = {isa = PBXBuildFile; fileRef = C6F49FB1179EDF1D001859D9 /* NPLCancellablePanGestureRecognizer.m */; };
 		C6F49FB5179EDF1D001859D9 /* NPLPannableTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = C6F49FB3179EDF1D001859D9 /* NPLPannableTableViewCell.m */; };
 		C6F49FB7179EDF49001859D9 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C6F49FB6179EDF49001859D9 /* UIKit.framework */; };
 		C6F4A01F179EE218001859D9 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C6F4A01E179EE218001859D9 /* QuartzCore.framework */; };
@@ -29,14 +29,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		46A052E452C535708EBE5483 /* CellLocation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CellLocation.h; sourceTree = "<group>"; };
-		46A05509A6D6E970DA5CB075 /* CellLocation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CellLocation.m; sourceTree = "<group>"; };
+		46A051FECD55AD5D285E1C9F /* NPLCancellablePanGestureRecognizer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NPLCancellablePanGestureRecognizer.m; sourceTree = "<group>"; };
+		46A056D25BD136B3573115E4 /* CellLocation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CellLocation.m; sourceTree = "<group>"; };
+		46A057ACAD7D3BB4BE202EC7 /* CellLocation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CellLocation.h; sourceTree = "<group>"; };
+		46A05D0B8CD26838535D1A59 /* NPLCancellablePanGestureRecognizer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NPLCancellablePanGestureRecognizer.h; sourceTree = "<group>"; };
 		C6586201179EE35400C04AD5 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		C6F49F9F179EDEC2001859D9 /* libNPLPannableTableViewCell.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libNPLPannableTableViewCell.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6F49FA2179EDEC2001859D9 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		C6F49FA6179EDEC2001859D9 /* NPLPannableTableViewCell-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NPLPannableTableViewCell-Prefix.pch"; sourceTree = "<group>"; };
-		C6F49FB0179EDF1D001859D9 /* NPLCancellablePanGestureRecognizer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NPLCancellablePanGestureRecognizer.h; sourceTree = "<group>"; };
-		C6F49FB1179EDF1D001859D9 /* NPLCancellablePanGestureRecognizer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NPLCancellablePanGestureRecognizer.m; sourceTree = "<group>"; };
 		C6F49FB2179EDF1D001859D9 /* NPLPannableTableViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NPLPannableTableViewCell.h; sourceTree = "<group>"; };
 		C6F49FB3179EDF1D001859D9 /* NPLPannableTableViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NPLPannableTableViewCell.m; sourceTree = "<group>"; };
 		C6F49FB6179EDF49001859D9 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
@@ -58,6 +58,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		46A058D239888B74AC453FDA /* Entity */ = {
+			isa = PBXGroup;
+			children = (
+				46A05D0B8CD26838535D1A59 /* NPLCancellablePanGestureRecognizer.h */,
+				46A056D25BD136B3573115E4 /* CellLocation.m */,
+				46A051FECD55AD5D285E1C9F /* NPLCancellablePanGestureRecognizer.m */,
+				46A057ACAD7D3BB4BE202EC7 /* CellLocation.h */,
+			);
+			path = Entity;
+			sourceTree = "<group>";
+		};
 		C6F49F96179EDEC2001859D9 = {
 			isa = PBXGroup;
 			children = (
@@ -89,13 +100,10 @@
 		C6F49FA4179EDEC2001859D9 /* NPLPannableTableViewCell */ = {
 			isa = PBXGroup;
 			children = (
-				C6F49FB0179EDF1D001859D9 /* NPLCancellablePanGestureRecognizer.h */,
-				C6F49FB1179EDF1D001859D9 /* NPLCancellablePanGestureRecognizer.m */,
-				46A05509A6D6E970DA5CB075 /* CellLocation.m */,
-				46A052E452C535708EBE5483 /* CellLocation.h */,
 				C6F49FB2179EDF1D001859D9 /* NPLPannableTableViewCell.h */,
 				C6F49FB3179EDF1D001859D9 /* NPLPannableTableViewCell.m */,
 				C6F49FA5179EDEC2001859D9 /* Supporting Files */,
+				46A058D239888B74AC453FDA /* Entity */,
 			);
 			path = NPLPannableTableViewCell;
 			sourceTree = "<group>";
@@ -159,9 +167,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C6F49FB4179EDF1D001859D9 /* NPLCancellablePanGestureRecognizer.m in Sources */,
 				C6F49FB5179EDF1D001859D9 /* NPLPannableTableViewCell.m in Sources */,
-				46A0530819E609FFF2571AE1 /* CellLocation.m in Sources */,
+				46A05AEC69D7E851A7F28F68 /* CellLocation.m in Sources */,
+				46A05596C9E1EBB6ADBFFA6C /* NPLCancellablePanGestureRecognizer.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -9,8 +9,8 @@
 #import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>
 
-#import "CellLocation.h"
-#import "NPLCancellablePanGestureRecognizer.h"
+#import "Entity/CellLocation.h"
+#import "Entity/NPLCancellablePanGestureRecognizer.h"
 
 #define AUTOGENERATE_GROUP_ID nil
 
@@ -28,8 +28,9 @@ typedef void (^BlockWithPannableCell)(NPLPannableTableViewCell *);
 @property CGFloat openToPosX;
 @property CGFloat closeToPosX;
 
-@property UITableView *tableView;
-@property NSString *groupId;
+@property(nonatomic, readonly, weak) UITableView *tableView;
+@property(nonatomic, readonly, strong) NSString *reuseIndentifier;
+@property(nonatomic, readonly, strong) NSString *groupId;
 
 + (CellLocation *)prevPannedCellLocationForGroupId:(NSString *)groupId;
 
@@ -64,6 +65,8 @@ typedef void (^BlockWithPannableCell)(NPLPannableTableViewCell *);
 
 - (BOOL)isPanningCloseThresholdWithCurrentPos:(CGPoint)currentPos startPos:(CGPoint)startPos;
 
+- (instancetype)initWithFrame:(CGRect)frame reuseIdentifier:(NSString *)reuseIdentifier tableView:(UITableView *)tableView groupId:(NSString *)groupId;
+
 - (id)initWithReuseIdentifier:(NSString *)reuseIdentifier
                    foreground:(UIView *)foreground
                    background:(UIView *)background
@@ -71,6 +74,8 @@ typedef void (^BlockWithPannableCell)(NPLPannableTableViewCell *);
                   closeToPosX:(CGFloat)closeToX
                     tableView:(UITableView *)tableViewId
                       groupId:(NSString *)groupId;            // table view id string for check previously panned cell
+
+- (void)setupWithForegroundView:(UIView *)foreground backgroundView:(UIView *)background openToPosX:(CGFloat)openToX closeToPosX:(CGFloat)closeToX;
 
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer;
 
