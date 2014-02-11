@@ -22,8 +22,9 @@ typedef void (^BlockWithPannableCell)(NPLPannableTableViewCell *);
 
 @property(nonatomic, readwrite) UIView *panningForegroundView;
 @property(nonatomic, readwrite) UIView *panningBackgroundView;
-@property(copy, readwrite) BlockWithPannableCell performBeforeOpening;
-@property(copy, readwrite) BlockWithPannableCell performAfterClosing;
+
+@property(copy) BlockWithPannableCell performBeforeOpening;
+@property(copy) BlockWithPannableCell performAfterClosing;
 
 @property CGFloat openToPosX;
 @property CGFloat closeToPosX;
@@ -32,6 +33,22 @@ typedef void (^BlockWithPannableCell)(NPLPannableTableViewCell *);
 @property(nonatomic, readonly, strong) NSString *reuseIndentifier;
 @property(nonatomic, readonly, strong) NSString *groupId;
 
+
+#pragma mark - event handlers
+
+@property(copy, readonly) void (^beforeOpenEventHandler)(void);
+@property(copy, readonly) void (^afterOpenEventHandler)(void);
+@property(copy, readonly) void (^beforeCloseEventHandler)(void);
+@property(copy, readonly) void (^afterCloseEventHandler)(void);
+
+# pragma mark - event handler registration
+
+- (void)setupEventHandlersOnBeforeOpen:(void (^)())beforeOpenHandler
+                           onAfterOpen:(void (^)())afterOpenHandler
+                         onBeforeClose:(void (^)())beforeCloseHandler
+                          onAfterClose:(void (^)())afterCloseHandler;
+
+#pragma mark - panning method definition
 + (CellLocation *)prevPannedCellLocationForGroupId:(NSString *)groupId;
 
 + (void)setPrevPannedIndexPath:(NSIndexPath *)indexPath
@@ -80,4 +97,7 @@ typedef void (^BlockWithPannableCell)(NPLPannableTableViewCell *);
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer;
 
 - (void)resetToInitPositionAt:(NSIndexPath *)indexPath;
+
+
+
 @end

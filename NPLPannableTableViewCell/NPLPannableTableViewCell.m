@@ -35,10 +35,10 @@ static CGFloat distanceThreshold;                       // panning distance
 
 static NSMutableDictionary*prevPannedCellLocations = nil;      // register panned cell when it's opened,
 static NSMutableDictionary*panningCellLocations = nil;         // register panning cell when user started to pan
-                                                        // panning cell exist only on for each tableView set by users
+                                                               // panning cell exist only on for each tableView set by
+                                                               // users
 @synthesize panningForegroundView, panningBackgroundView;
 @synthesize openToPosX, closeToPosX;
-@synthesize performBeforeOpening, performAfterClosing;
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated
 {
@@ -281,7 +281,8 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
     UIView *topShadowView = [[UIView alloc] initWithFrame:bound];
     CAGradientLayer *topShadow = [CAGradientLayer layer];
     topShadow.frame = bound;
-    topShadow.colors = [NSArray arrayWithObjects:(id)[[UIColor colorWithWhite:0.0 alpha:0.25f] CGColor], (id)[[UIColor clearColor] CGColor], nil];
+    topShadow.colors = [NSArray arrayWithObjects:(__bridge id)[[UIColor colorWithWhite:0.0 alpha:0.25f] CGColor],
+                    (__bridge id)[[UIColor clearColor] CGColor], nil];
     [topShadowView.layer insertSublayer:topShadow atIndex:0];
     return topShadowView;
 }
@@ -385,25 +386,32 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
 }
 
 -(void)panOpen {
-    if(performBeforeOpening) {
-        performBeforeOpening(self);
-    }
-    
+//    if(performBeforeOpening) {
+//        performBeforeOpening(self);
+//    }
+    if( _beforeOpenEventHandler) { self.beforeOpenEventHandler(); }
+
     [self panView:self.panningForegroundView
               toX:(self.openToPosX - self.bounds.size.width)
          duration:PANNING_DURATION_NORMAL
-       completion:NULL];
+       completion:^(BOOL finished){
+           _afterOpenEventHandler?self.afterOpenEventHandler():nil;
+       }];
 }
 
 -(void)panClose:(BOOL)removePrevPannedCell {
+
     [self panCloseWithShadow:NO removePrevPannedCell:removePrevPannedCell];
+
 }
 
 -(void)panCloseWithShadow:(BOOL)shadow removePrevPannedCell:(BOOL)removePrevPannedCell; {
     if(removePrevPannedCell) {
         [prevPannedCellLocations removeObjectForKey:self.groupId];
     }
-    
+
+    _beforeCloseEventHandler?self.beforeCloseEventHandler():nil;
+
     if(shadow) {
         [self dropShadowOnView:self.panningForegroundView];
     }
@@ -412,9 +420,10 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
          duration:PANNING_DURATION_NORMAL
        completion:^(BOOL finished) {
            if(shadow) { [self removeShadow]; }
-           if(performAfterClosing) {
-               performAfterClosing(self);
-           }
+//           if(performAfterClosing) {
+//               performAfterClosing(self);
+//           }
+           _afterCloseEventHandler?self.afterCloseEventHandler():nil;
        }];
 }
 
@@ -443,5 +452,15 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
     }
 }
 
+#pragma mark - event handlers
 
+- (void)setupEventHandlersOnBeforeOpen:(void (^)())beforeOpenHandler
+                           onAfterOpen:(void (^)())afterOpenHandler
+                         onBeforeClose:(void (^)())beforeCloseHandler
+                          onAfterClose:(void (^)())afterCloseHandler {
+    _beforeOpenEventHandler = beforeOpenHandler;
+    _afterOpenEventHandler = afterOpenHandler;
+    _beforeCloseEventHandler = beforeCloseHandler;
+    _afterCloseEventHandler = afterCloseHandler;
+}
 @end
