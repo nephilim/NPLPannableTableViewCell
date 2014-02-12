@@ -8,17 +8,13 @@
 
 #import "NPLPannableTableViewCell.h"
 
-// constants related to panning
-// TODO: change to property
-#define PANNING_DURATION_FAST 0.1
-#define PANNING_DURATION_NORMAL 0.2
-
 @interface NPLPannableTableViewCell(Private)
 
 // geture recognizer handler
 - (IBAction) handleCellPanning:(NPLCancellablePanGestureRecognizer*)recognizer;
+
 // panning
-- (void) panCloseWithShadow:(BOOL)shadow removePrevPannedCell:(BOOL)removePrevPannedCell;
+- (void) panCloseWithShadow:(BOOL)shadow removePrevPannedCell:(BOOL)resetPreviousOpenCell;
 - (UIView *) shadowLayerWithBound:(CGRect)bound;
 //- (UIView*) singletonShadowLayer;
 - (void) dropShadowOnView:(UIView*)view;
@@ -29,7 +25,10 @@
 
 @end
 
-@implementation NPLPannableTableViewCell
+@implementation NPLPannableTableViewCell {
+    CGFloat _normalDuration;
+    CGFloat _fastDuration;
+}
 
 static CGFloat distanceThreshold;                       // panning distance
 
@@ -63,7 +62,8 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
 }
 
 // designated initialzer
-// if groupId is set AUTOGENERATE_GROUP_ID, the group id is allocated on each table separately
+// if groupId is set AUTOGENERATE_GROUP_ID,
+// the group id is allocated on each table separately
 - (id)initWithReuseIdentifier:(NSString *)reuseIdentifier
                    foreground:(UIView *)foreground
                    background:(UIView *)background
@@ -161,6 +161,7 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
     
     // TODO: declare static vars per table
     static CGPoint panningStartPos;
+    static CGPoint cellStartPos;
     
     NPLPannableTableViewCell* panningCell = [self panningCellInGroup];
 
@@ -199,9 +200,14 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
             // set panning start position
             panningStartPos.x = location.x;
             panningStartPos.y = location.y;
-                        
+            cellStartPos = self.panningForegroundView.frame.origin;
+
+            NSLog(@"cell start pos(x):%f" , cellStartPos.x);
+
+            if (self.openingEffect) { self.openingEffect(panningForegroundView, panningBackgroundView); }
             // shadowing
-            [self dropShadowOnView:panningForegroundView];
+            // [self dropShadowOnView:panningForegroundView];
+
             velocity = [gestureRecognizer velocityInView:self];
             break;
             
@@ -212,24 +218,25 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
                                                        startPos:panningStartPos] ) {
                     [self panCloseWithShadow:NO removePrevPannedCell:YES];            // close
                 } else {
-                    [self panOpen];             // fail to close
+                    [self panOpenForeground];             // fail to close
                 }
             } else {
                 // user tries to open not-opened-yet cell
                 if( [self isPanningOpenThresholdWithCurrentPos:location
                                                       startPos:panningStartPos] ) {
                     [self setAsPrevPannedIndexPath]; // open
-                    [self panOpen];
+                    [self panOpenForeground];
                 } else {
                     [self panClose:NO];         // fail to open
                 }
             }
             
             // unshadowing
-            [self removeShadow];
+            if (self.closingEffect) { self.closingEffect(panningForegroundView, panningBackgroundView); }
+            //[self removeShadow];
             
-            panningStartPos.x = 0;
-            panningStartPos.y = 0;
+//            panningStartPos.x = 0;
+//            panningStartPos.y = 0;
 
             [self forgetPanningCellLocationInGroup];
 
@@ -242,7 +249,7 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
              panningIndexPath = nil;
              panningCell = nil;
              [gestureRecognizer cancelsTouchesInView];
-             [self snapView:panningForegroundView toX:0 duration:PANNING_DURATION_NORMAL animated:YES];
+             [self snapView:panningForegroundView toX:0 duration:DEFAULT_PANNING_DURATION_NORMAL animated:YES];
              }
              */
             
@@ -255,18 +262,26 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
                  // skip not to blink
                  [self snapView:panningForegroundView
                  toX: -self.bounds.size.width +  panToX
-                 duration:PANNING_DURATION_NORMAL
+                 duration:DEFAULT_PANNING_DURATION_NORMAL
                  completion:NULL];
                  */
             //} else
-
-            if( ![prevPannedCellLocation isEqualWithTableView:_tableView indexPath:indexPath]) {
+            //NSLog(@"to pos: %f", cellStartPos.x + panToX);
+            //if( ![prevPannedCellLocation isEqualWithTableView:_tableView indexPath:indexPath]) {
                 // user is trying to open
+
+                /*
                 [self panView:self.panningForegroundView
                           toX:panToX
-                     duration:PANNING_DURATION_FAST
+                     duration:self.fastDuration
                    completion:NULL];
-            }
+                 */
+                [self panOpenForegroundToX:(cellStartPos.x + panToX)
+                                  duration:self.fastDuration
+                                   onStart:nil
+                                onComplete:nil];
+
+            //}
             break;
             
         default:
@@ -369,35 +384,64 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
 
 // panning threshold to open/close tableview cell foreground
 
-- (CGFloat) panningDistanceThreshold {
+- (CGFloat)panningDistanceThreshold {
     if (!distanceThreshold) {
-        UIScreenMode* screenMode =[[UIScreen mainScreen] currentMode];
+        UIScreenMode *screenMode = [[UIScreen mainScreen] currentMode];
         distanceThreshold = screenMode.size.width / 10;
     }
     return distanceThreshold;
 }
 
--(BOOL)isPanningOpenThresholdWithCurrentPos:(CGPoint)currentPos startPos:(CGPoint)startPos {
+-(BOOL)isPanningOpenThresholdWithCurrentPos:(CGPoint)currentPos
+                                   startPos:(CGPoint)startPos {
     return (startPos.x - currentPos.x > [self panningDistanceThreshold]);
 }
 
--(BOOL)isPanningCloseThresholdWithCurrentPos:(CGPoint)currentPos startPos:(CGPoint)startPos {
+-(BOOL)isPanningCloseThresholdWithCurrentPos:(CGPoint)currentPos
+                                    startPos:(CGPoint)startPos {
     return (currentPos.x - startPos.x > [self panningDistanceThreshold]);
 }
 
--(void)panOpen {
-//    if(performBeforeOpening) {
-//        performBeforeOpening(self);
+// TODO: delete
+- (void)panOpen {
+//    if(self.performBeforeOpening) {
+//        self.performBeforeOpening(self);
 //    }
-    if( _beforeOpenEventHandler) { self.beforeOpenEventHandler(); }
 
-    [self panView:self.panningForegroundView
-              toX:(self.openToPosX - self.bounds.size.width)
-         duration:PANNING_DURATION_NORMAL
-       completion:^(BOOL finished){
-           _afterOpenEventHandler?self.afterOpenEventHandler():nil;
-       }];
+    [self panOpenForegroundToX:(self.openToPosX - self.bounds.size.width)
+                      duration:self.normalDuration];
 }
+
+- (void)panOpenForeground {
+    [self panOpenForegroundToX:(self.openToPosX - CGRectGetWidth(self.bounds))
+                      duration:self.normalDuration];
+}
+
+- (void)panOpenForegroundToX:(CGFloat)x
+                    duration:(CGFloat)duration {
+    [self panWithView:VIEW_LOCATION_FOREGROUND
+                  toX:x
+             duration:duration
+              onStart:self.beforeOpenEventHandler
+           onComplete:self.afterOpenEventHandler];
+    [self panOpenForegroundToX:x
+                      duration:duration
+                       onStart:self.beforeOpenEventHandler
+                    onComplete:self.afterOpenEventHandler];
+}
+
+- (void)panOpenForegroundToX:(CGFloat)x
+                    duration:(CGFloat)duration
+                     onStart:(void (^)(void))startHandler
+                  onComplete:(void (^)(BOOL))completeHandler
+{
+    [self panWithView:VIEW_LOCATION_FOREGROUND
+                  toX:x
+             duration:duration
+              onStart:startHandler
+           onComplete:completeHandler];
+}
+# pragma mark pan close
 
 -(void)panClose:(BOOL)removePrevPannedCell {
 
@@ -405,29 +449,95 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
 
 }
 
--(void)panCloseWithShadow:(BOOL)shadow removePrevPannedCell:(BOOL)removePrevPannedCell; {
-    if(removePrevPannedCell) {
-        [prevPannedCellLocations removeObjectForKey:self.groupId];
-    }
+-(void)panCloseWithShadow:(BOOL)shadow removePrevPannedCell:(BOOL)resetPreviousOpenCell; {
 
-    _beforeCloseEventHandler?self.beforeCloseEventHandler():nil;
-
+    /*
     if(shadow) {
         [self dropShadowOnView:self.panningForegroundView];
     }
     [self panView:self.panningForegroundView
               toX:self.closeToPosX
-         duration:PANNING_DURATION_NORMAL
+         duration:self.normalDuration
        completion:^(BOOL finished) {
            if(shadow) { [self removeShadow]; }
-//           if(performAfterClosing) {
-//               performAfterClosing(self);
+//           if(self.performAfterClosing) {
+//               self.performAfterClosing(self);
 //           }
-           _afterCloseEventHandler?self.afterCloseEventHandler():nil;
+           self.afterCloseEventHandler?self.afterCloseEventHandler(finished):nil;
        }];
+    */
+
+    [self panWithView:VIEW_LOCATION_FOREGROUND
+                toPos:CGPointMake(self.closeToPosX, 0)
+             duration:self.normalDuration
+                delay:0
+       animationCurve:UIViewAnimationCurveEaseInOut
+              onStart:^{
+                  if(resetPreviousOpenCell) {
+                      [prevPannedCellLocations removeObjectForKey:self.groupId];
+                  }
+
+                  self.beforeCloseEventHandler?self.beforeCloseEventHandler():nil;
+//                  if(shadow) {
+//                      [self dropShadowOnView:self.panningForegroundView];
+//                  }
+              }
+           onComplete:^(BOOL finished){
+//               if(shadow) { [self removeShadow]; }
+               self.afterCloseEventHandler?self.afterCloseEventHandler(finished):nil;
+           }];
 }
 
--(void)panView:(UIView *)view toX:(float)x duration:(float)sec completion:(void (^)(BOOL finished)) completionBlock {
+
+- (void)panWithView:(ViewLocation)viewLocation
+                toX:(CGFloat)x
+           duration:(CGFloat)duration
+            onStart:(void (^)(void))startHandler
+         onComplete:(void (^)(BOOL))completeHandler
+{
+    [self panWithView:viewLocation
+                toPos:CGPointMake(x, 0)
+             duration:duration
+                delay:0
+       animationCurve:UIViewAnimationCurveEaseOut
+              onStart:startHandler
+           onComplete:completeHandler];
+}
+
+
+- (void)panWithView:(ViewLocation)viewLocation
+              toPos:(CGPoint)pos
+           duration:(CGFloat)duration
+              delay:(CGFloat)delay
+     animationCurve:(UIViewAnimationCurve)curve
+            onStart:(void (^)(void))startHandler
+         onComplete:(void (^)(BOOL))completeHandler
+{
+    UIView* targetView;
+    switch(viewLocation) {
+        case VIEW_LOCATION_FOREGROUND:
+            targetView =  self.panningForegroundView;
+            break;
+        case VIEW_LOCATION_BACKGROUND:
+            targetView = self.panningBackgroundView;
+    }
+
+    if (startHandler) { startHandler(); }
+
+    [UIView animateWithDuration:duration
+                          delay:delay
+                        options:curve
+                     animations:^{      // TODO: animation define
+                         [targetView setTransform:CGAffineTransformMakeTranslation(pos.x, pos.y)];}
+                     completion:completeHandler];
+}
+
+#pragma  mark
+
+-(void)panView:(UIView *)view
+           toX:(float)x
+      duration:(float)sec
+    completion:(void (^)(BOOL finished)) completionBlock {
     [UIView animateWithDuration:sec
                           delay:0
                         options:UIViewAnimationCurveEaseOut
@@ -440,24 +550,55 @@ static NSMutableDictionary*panningCellLocations = nil;         // register panni
     CellLocation *prevPannedCellLocation = [NPLPannableTableViewCell prevPannedCellLocationForGroupId:self.groupId];
     if ([prevPannedCellLocation isEqualWithTableView:self.tableView
                                            indexPath:indexPath]) {
+        /*
         [self panView:self.panningForegroundView
                   toX:(self.openToPosX - self.bounds.size.width)
              duration:0
            completion:nil];
+           */
+        [self panOpenForegroundToX:self.openToPosX - CGRectGetWidth(self.bounds)
+                          duration:0
+                           onStart:nil
+                        onComplete:nil];
     } else {
+        /*
         [self panView:self.panningForegroundView
                   toX:self.closeToPosX
              duration:0
            completion:nil];
+           */
+        [self panOpenForegroundToX:self.closeToPosX
+                          duration:0
+                           onStart:nil
+                        onComplete:nil];
     }
+}
+
+#pragma mark - panning attributes: speed
+- (CGFloat)normalDuration
+{
+    return (_normalDuration > 0)?_normalDuration: DEFAULT_PANNING_DURATION_NORMAL;
+}
+
+- (CGFloat)fastDuration
+{
+    return (_fastDuration > 0)?_fastDuration: DEFAULT_PANNING_DURATION_FAST;
+}
+
+
+- (void)setPanningSpeedWithDuration:(CGFloat)normalDuration
+                             onFast:(CGFloat)fastDuration
+{
+    _normalDuration = normalDuration;
+    _fastDuration = fastDuration;
 }
 
 #pragma mark - event handlers
 
-- (void)setupEventHandlersOnBeforeOpen:(void (^)())beforeOpenHandler
-                           onAfterOpen:(void (^)())afterOpenHandler
-                         onBeforeClose:(void (^)())beforeCloseHandler
-                          onAfterClose:(void (^)())afterCloseHandler {
+- (void)setDefaultEventHandlersOnBeforeOpen:(void (^)())beforeOpenHandler
+                                onAfterOpen:(void (^)(BOOL))afterOpenHandler
+                              onBeforeClose:(void (^)())beforeCloseHandler
+                               onAfterClose:(void (^)(BOOL))afterCloseHandler {
     _beforeOpenEventHandler = beforeOpenHandler;
     _afterOpenEventHandler = afterOpenHandler;
     _beforeCloseEventHandler = beforeCloseHandler;

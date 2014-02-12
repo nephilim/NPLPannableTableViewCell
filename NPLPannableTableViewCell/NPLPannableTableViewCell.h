@@ -1,10 +1,15 @@
 //
 //  NPLPannableTableViewCell.h
-//  Toodo
 //
 //  Created by Nephilim on 13. 7. 12..
-//  Copyright (c) 2013년 YakShavingLocus. All rights reserved.
+//  Copyright (c) 2013 YakShavingLocus. All rights reserved.
 //
+
+#define AUTOGENERATE_GROUP_ID           nil
+#define DEFAULT_PANNING_DURATION_FAST   0.1
+#define DEFAULT_PANNING_DURATION_NORMAL 0.2
+
+#include <AvailabilityMacros.h>
 
 #import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>
@@ -12,7 +17,10 @@
 #import "Entity/CellLocation.h"
 #import "Entity/NPLCancellablePanGestureRecognizer.h"
 
-#define AUTOGENERATE_GROUP_ID nil
+typedef enum _ViewLocation {
+    VIEW_LOCATION_FOREGROUND,
+    VIEW_LOCATION_BACKGROUND
+} ViewLocation;
 
 @interface NPLPannableTableViewCell : UITableViewCell <UIGestureRecognizerDelegate> {
     UIView *shadowView;
@@ -23,32 +31,40 @@ typedef void (^BlockWithPannableCell)(NPLPannableTableViewCell *);
 @property(nonatomic, readwrite) UIView *panningForegroundView;
 @property(nonatomic, readwrite) UIView *panningBackgroundView;
 
-@property(copy) BlockWithPannableCell performBeforeOpening;
-@property(copy) BlockWithPannableCell performAfterClosing;
+@property(copy) BlockWithPannableCell performBeforeOpening DEPRECATED_ATTRIBUTE;
+@property(copy) BlockWithPannableCell performAfterClosing DEPRECATED_ATTRIBUTE;
 
 @property CGFloat openToPosX;
 @property CGFloat closeToPosX;
+
+@property (readonly) CGFloat normalDuration;
+@property (readonly) CGFloat fastDuration;
+
+#pragma mark - attribute related to table view behavior
 
 @property(nonatomic, readonly, weak) UITableView *tableView;
 @property(nonatomic, readonly, strong) NSString *reuseIndentifier;
 @property(nonatomic, readonly, strong) NSString *groupId;
 
-
-#pragma mark - event handlers
+#pragma mark - getters for panning event handler
 
 @property(copy, readonly) void (^beforeOpenEventHandler)(void);
-@property(copy, readonly) void (^afterOpenEventHandler)(void);
+@property(copy, readonly) void (^afterOpenEventHandler)(BOOL);
 @property(copy, readonly) void (^beforeCloseEventHandler)(void);
-@property(copy, readonly) void (^afterCloseEventHandler)(void);
+@property(copy, readonly) void (^afterCloseEventHandler)(BOOL);
 
-# pragma mark - event handler registration
+@property(copy, readwrite) void (^openingEffect)(UIView* foreground, UIView* background);
+@property(copy, readwrite) void (^closingEffect)(UIView* foreground, UIView* background);
 
-- (void)setupEventHandlersOnBeforeOpen:(void (^)())beforeOpenHandler
-                           onAfterOpen:(void (^)())afterOpenHandler
-                         onBeforeClose:(void (^)())beforeCloseHandler
-                          onAfterClose:(void (^)())afterCloseHandler;
+#pragma mark - comprehensive setter for event handler
+
+- (void)setDefaultEventHandlersOnBeforeOpen:(void (^)())beforeOpenHandler
+                                onAfterOpen:(void (^)(BOOL finished))afterOpenHandler
+                              onBeforeClose:(void (^)())beforeCloseHandler
+                               onAfterClose:(void (^)(BOOL finished))afterCloseHandler;
 
 #pragma mark - panning method definition
+
 + (CellLocation *)prevPannedCellLocationForGroupId:(NSString *)groupId;
 
 + (void)setPrevPannedIndexPath:(NSIndexPath *)indexPath
@@ -69,18 +85,47 @@ typedef void (^BlockWithPannableCell)(NPLPannableTableViewCell *);
 
 - (CGFloat)panningDistanceThreshold;
 
-- (void)panOpen;
+# pragma mark panning open/close
+
+# pragma mark pan open
+
+- (void)panOpen DEPRECATED_ATTRIBUTE;
+
+- (void)panOpenForeground;
+- (void)panOpenForegroundToX:(CGFloat)x
+                    duration:(CGFloat)duration;
+
+
+# pragma
+
+
 
 - (void)panClose:(BOOL)removePrevPannedCell;
+
+# pragma mark fundamental behaviors for panning
+- (void)panWithView:(ViewLocation)viewLocation
+                toX:(CGFloat)x
+           duration:(CGFloat)duration
+            onStart:(void (^)(void))startHandler
+         onComplete:(void (^)(BOOL))completeHandler;
+
+- (void)panWithView:(ViewLocation)viewLocation
+              toPos:(CGPoint)pos
+           duration:(CGFloat)duration
+              delay:(CGFloat)delay
+     animationCurve:(UIViewAnimationCurve)curve
+            onStart:(void (^)(void))startHandler
+         onComplete:(void (^)(BOOL))completeHandler;
 
 - (void)panView:(UIView *)view
             toX:(float)x
        duration:(float)sec
-     completion:(void (^)(BOOL finished))completionBlock;
+ completion:(void (^)(BOOL finished))completionBlock    DEPRECATED_ATTRIBUTE;
 
-- (BOOL)isPanningOpenThresholdWithCurrentPos:(CGPoint)currentPos startPos:(CGPoint)startPos;
-
-- (BOOL)isPanningCloseThresholdWithCurrentPos:(CGPoint)currentPos startPos:(CGPoint)startPos;
+- (BOOL)isPanningOpenThresholdWithCurrentPos:(CGPoint)currentPos
+                                    startPos:(CGPoint)startPos;
+- (BOOL)isPanningCloseThresholdWithCurrentPos:(CGPoint)currentPos
+                                     startPos:(CGPoint)startPos;
 
 - (instancetype)initWithFrame:(CGRect)frame reuseIdentifier:(NSString *)reuseIdentifier tableView:(UITableView *)tableView groupId:(NSString *)groupId;
 
@@ -92,7 +137,10 @@ typedef void (^BlockWithPannableCell)(NPLPannableTableViewCell *);
                     tableView:(UITableView *)tableViewId
                       groupId:(NSString *)groupId;            // table view id string for check previously panned cell
 
-- (void)setupWithForegroundView:(UIView *)foreground backgroundView:(UIView *)background openToPosX:(CGFloat)openToX closeToPosX:(CGFloat)closeToX;
+- (void)setupWithForegroundView:(UIView *)foreground
+                 backgroundView:(UIView *)background
+                     openToPosX:(CGFloat)openToX
+                    closeToPosX:(CGFloat)closeToX;
 
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer;
 
