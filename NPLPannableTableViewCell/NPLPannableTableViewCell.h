@@ -22,6 +22,14 @@ typedef enum _ViewLocation {
     VIEW_LOCATION_BACKGROUND
 } ViewLocation;
 
+typedef enum _OpeningDirection {
+    OPENING_DIRECTION_NONE,
+    OPENING_DIRECTION_LEFT,
+    OPENING_DIRECTION_RIGHT,
+    OPENING_DIRECTION_UP,
+    OPENING_DIRECTION_DOWN
+} NPLCellOpeningDirection;
+
 @interface NPLPannableTableViewCell : UITableViewCell <UIGestureRecognizerDelegate> {
     UIView *shadowView;
 }
@@ -34,8 +42,9 @@ typedef void (^BlockWithPannableCell)(NPLPannableTableViewCell *);
 @property(copy) BlockWithPannableCell performBeforeOpening DEPRECATED_ATTRIBUTE;
 @property(copy) BlockWithPannableCell performAfterClosing DEPRECATED_ATTRIBUTE;
 
-@property CGFloat openToPosX;
-@property CGFloat closeToPosX;
+@property CGPoint openToPos;
+@property CGPoint closeToPos;
+@property (readonly) NPLCellOpeningDirection openingDirection;
 
 @property (readonly) CGFloat normalDuration;
 @property (readonly) CGFloat fastDuration;
@@ -77,12 +86,13 @@ typedef void (^BlockWithPannableCell)(NPLPannableTableViewCell *);
                       tableView:(UITableView *)tableView
                      forGroupId:(NSString *)groupId;
 
+- (NPLCellOpeningDirection)directionWithStartPos:(CGPoint)startPos
+                                   EndPos:(CGPoint)endPos;
+
 + (NSString *)generateTableViewIdentifierFromTableView:(UITableView *)tableView;
 
 - (void)setAsPrevPannedIndexPath;
-
 - (void)setAsPanningCell;
-
 - (CGFloat)panningDistanceThreshold;
 
 # pragma mark panning open/close
@@ -92,60 +102,69 @@ typedef void (^BlockWithPannableCell)(NPLPannableTableViewCell *);
 - (void)panOpen DEPRECATED_ATTRIBUTE;
 
 - (void)panOpenForeground;
-- (void)panOpenForegroundToX:(CGFloat)x
-                    duration:(CGFloat)duration;
 
+- (void)panOpenForegroundTo:(CGPoint)pos
+                   duration:(CGFloat)duration;
 
-# pragma
-
-
+- (void)panOpenForegroundTo:(CGPoint)pos
+                   duration:(CGFloat)duration
+                    onStart:(void (^)(void))startHandler
+                 onComplete:(void (^)(BOOL))completeHandler;
+# pragma mark pan close
 
 - (void)panClose:(BOOL)removePrevPannedCell;
 
 # pragma mark fundamental behaviors for panning
 - (void)panWithView:(ViewLocation)viewLocation
-                toX:(CGFloat)x
+              toPos:(CGPoint)pos
            duration:(CGFloat)duration
             onStart:(void (^)(void))startHandler
          onComplete:(void (^)(BOOL))completeHandler;
 
-- (void)panWithView:(ViewLocation)viewLocation
-              toPos:(CGPoint)pos
-           duration:(CGFloat)duration
-              delay:(CGFloat)delay
-     animationCurve:(UIViewAnimationCurve)curve
-            onStart:(void (^)(void))startHandler
-         onComplete:(void (^)(BOOL))completeHandler;
+- (void)panWithView:(ViewLocation)viewLocation from:(CGPoint)fromPos to:(CGPoint)toPos duration:(CGFloat)duration onStart:(void (^)(void))startHandler onComplete:(void (^)(BOOL))completeHandler;
+
+- (void)translateWithView:(ViewLocation)viewLocation fromPos:(CGPoint)fromPos toPos:(CGPoint)toPos duration:(CGFloat)duration delay:(CGFloat)delay animationCurve:(UIViewAnimationCurve)curve onStart:(void (^)(void))startHandler onComplete:(void (^)(BOOL))completeHandler;
 
 - (void)panView:(UIView *)view
             toX:(float)x
        duration:(float)sec
- completion:(void (^)(BOOL finished))completionBlock    DEPRECATED_ATTRIBUTE;
+     completion:(void (^)(BOOL finished))completionBlock    DEPRECATED_ATTRIBUTE;
 
 - (BOOL)isPanningOpenThresholdWithCurrentPos:(CGPoint)currentPos
                                     startPos:(CGPoint)startPos;
+
 - (BOOL)isPanningCloseThresholdWithCurrentPos:(CGPoint)currentPos
                                      startPos:(CGPoint)startPos;
 
-- (instancetype)initWithFrame:(CGRect)frame reuseIdentifier:(NSString *)reuseIdentifier tableView:(UITableView *)tableView groupId:(NSString *)groupId;
+- (CGFloat)distanceByDirection:(NPLCellOpeningDirection)direction
+                       fromPos:(CGPoint)fromPos
+                         toPos:(CGPoint)toPos;
+
+- (CGPoint)calibrateWithOriginalPos:(CGPoint)original
+                    panningStartPos:(CGPoint)panningStartPos
+                      panningEndPos:(CGPoint)panningEndPos;
+
+- (instancetype)initWithFrame:(CGRect)frame
+              reuseIdentifier:(NSString *)reuseIdentifier
+                    tableView:(UITableView *)tableView
+                      groupId:(NSString *)groupId;
 
 - (id)initWithReuseIdentifier:(NSString *)reuseIdentifier
                    foreground:(UIView *)foreground
                    background:(UIView *)background
-                   openToPosX:(CGFloat)openToX
-                  closeToPosX:(CGFloat)closeToX
+                    openToPos:(CGPoint)openToPos
+                   closeToPos:(CGPoint)closeToPos
                     tableView:(UITableView *)tableViewId
-                      groupId:(NSString *)groupId;            // table view id string for check previously panned cell
+                      groupId:(NSString *)groupId;            // table view id string for close previously panned cell
 
-- (void)setupWithForegroundView:(UIView *)foreground
-                 backgroundView:(UIView *)background
-                     openToPosX:(CGFloat)openToX
-                    closeToPosX:(CGFloat)closeToX;
+- (void)setForegroundView:(UIView *)foreground
+           backgroundView:(UIView *)background
+                   openTo:(CGPoint)openToPos
+                  closeTo:(CGPoint)closeToPos;          // foreground view will be initially located to close
 
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer;
 
 - (void)resetToInitPositionAt:(NSIndexPath *)indexPath;
-
 
 
 @end
