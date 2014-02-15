@@ -6,8 +6,8 @@
 //
 
 #define AUTOGENERATE_GROUP_ID           nil
-#define DEFAULT_PANNING_DURATION_FAST   0.1
-#define DEFAULT_PANNING_DURATION_NORMAL 0.2
+#define DEFAULT_PANNING_DURATION_FAST   0.05
+#define DEFAULT_PANNING_DURATION_NORMAL 0.1
 
 #include <AvailabilityMacros.h>
 
